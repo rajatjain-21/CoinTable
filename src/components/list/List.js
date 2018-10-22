@@ -3,23 +3,34 @@ import { handleResponse } from '../../helpers';
 import { API_URL } from '../../config';
 import Loading from '../common/Loading';
 import Table from './Table';
+import Pagination from './Pagination';
 class List extends React.Component {
     constructor() {
         super();
         this.state = {
             loading: false,
             currencies: [],
-            error: null
+            error: null,
+            totalPages: 0,
+            page: 1
         };
+        this.handlePaginationClick = this.handlePaginationClick.bind(this);
     }
     componentDidMount() {
-        this.setState({ loading: true })
-        fetch(`${API_URL}/cryptocurrencies?page=1&perPage=20`)
+        this.fetchCurrencies();
+    }
+    
+    fetchCurrencies() {
+        this.setState({ loading: true });
+        const {page} = this.state;
+        fetch(`${API_URL}/cryptocurrencies?page=${page}&perPage=20`)
         .then(handleResponse)
         .then((data) => {
+            const { currencies, totalPages } = data;
             this.setState({
-                currencies: data.currencies,
-                loading: false 
+                currencies,
+                loading: false,
+                totalPages
             })
         })
         .catch((error) => {
@@ -40,8 +51,26 @@ class List extends React.Component {
         else return <span>{percent}</span>
     }
 
+    handlePaginationClick(direction) {
+        let nextPage = this.state.page;
+        // Increment next page if direction variable is "next" else decrement it
+        nextPage = direction ==="next"? nextPage + 1 : nextPage - 1;
+        
+        /* setState behaves asynchronously, so when fetchCurrencies() is called it can still be having the older page version
+            Luckily, setState takes callback as a second argument
+            this.setState({page: nextPage});
+            this.fetchCurrencies();*/
+        
+        this.setState({page: nextPage}, () => {
+            // call fetchCurrencies inside setState's callback
+            // because we have to make sure first page state is updated
+            this.fetchCurrencies();
+        })
+    }
+
+
     render() {
-        const {loading, currencies, error} = this.state;
+        const {loading, currencies, error, page, totalPages} = this.state;
 
         // render only loading component if loading state is set to true.
         if(loading) {
@@ -56,9 +85,15 @@ class List extends React.Component {
             )
         }
         return(
-            <Table 
-            currencies={currencies}
-            renderChangePercent={this.renderChangePercent}/>
+            <div>
+                <Table 
+                currencies={currencies}
+                renderChangePercent={this.renderChangePercent}/>
+                <Pagination 
+                page={page} 
+                totalPages={totalPages}
+                handlePaginationClick={this.handlePaginationClick}/>
+            </div>
         )
     }
 }
