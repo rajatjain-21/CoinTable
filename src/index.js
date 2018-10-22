@@ -4,13 +4,21 @@ import Header from './components/common/Header';
 import List from './components/list/List';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import './index.css';
+import NotFound from './components/notfound/NotFound';
+import Detail from './components/detail/Detail';
 
 const App = () => {
   return (
+    <BrowserRouter>
     <div>
       <Header />
-      <List />
+        <Switch>
+          <Route path="/" component={List} exact />
+          <Route path="/currency/:id" component={Detail} exact />
+          <Route component={NotFound} />
+        </Switch>
     </div>
+    </BrowserRouter>
   );
 }
 
